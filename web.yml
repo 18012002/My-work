@@ -1,0 +1,9 @@
+---
+- name: webserver install
+  hosts: dev
+  become: true
+  tasks:
+    - name: apache install
+      apt:
+        name: apache2
+        state: present
