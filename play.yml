@@ -1,0 +1,13 @@
+---
+- name: server configuration
+  hosts: dev
+  become: true
+  tasks:
+    - name: create user
+      user:
+        name: gold
+        state: present       
+    - name: create directory
+      file:
+        path: /home/azureuser/deply_dir
+        state: directory
