@@ -1,0 +1,27 @@
+name: image-pushing-to-acr
+
+on:
+  push:
+    branches:
+      - master  # Change this if needed
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to ACR
+        run: az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/testing:latest .
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/testing:latest
