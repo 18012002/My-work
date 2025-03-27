@@ -32,6 +32,9 @@ jobs:
       - name: Update Azure Container App to Use Latest ACR Image
         run: |
           IMAGE_URI="${{ secrets.ACR_NAME }}.azurecr.io/${{ env.ACR_REPO_NAME }}:${{ env.TAG }}"
+
+          az acr login --name ${{ secrets.ACR_NAME }}
+          az acr repository show-tags --name ${{ secrets.ACR_NAME }} --repository ${{ env.ACR_REPO_NAME }} --output table
     
           az containerapp update \
             --name ${{ env.CONTAINER_APP_NAME }} \
