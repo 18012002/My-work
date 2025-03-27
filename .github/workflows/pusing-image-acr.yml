@@ -4,9 +4,13 @@ on:
   push:
     branches:
       - master  # Change this if needed
-
+env:
+  ACR_REPO_NAME: "testing"  # Your container registry repo name
+  TAG: "latest"                    # Or dynamically generate a tag
+  CONTAINER_APP_NAME: "testing"  # Name of your Azure Container App
+  RESOURCE_GROUP: "demo"
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,15 +27,13 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          IMAGE_URI="${{ secrets.ACR_NAME }}.azurecr.io/testing:latest"
-          docker build -t $IMAGE_URI .
-          docker push $IMAGE_URI
-
-      - name: Update Azure Container App with Latest Image
+          docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/testing:latest .
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/testing:latest
+      - name: Update Azure Container App to Use Latest ACR Image
         run: |
-          IMAGE_URI="${{ secrets.ACR_NAME }}.azurecr.io/testing:latest"
-          
+          IMAGE_URI="testingsd.azurecr.io/${{ env.ACR_REPO_NAME }}:${{ env.TAG }}"
+    
           az containerapp update \
-            --name ${{ secrets.CONTAINER_APP_NAME }} \
-            --resource-group ${{ secrets.RESOURCE_GROUP }} \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
             --image $IMAGE_URI
