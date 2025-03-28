@@ -2,38 +2,35 @@ name: acr-push
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
 
 env:
-  ACR_REPO_NAME: "testing"  
-  TAG: "latest"            
-  CONTAINER_APP_NAME: "testing"  
-  RESOURCE_GROUP: "demo"    
+  ACR_REPO_NAME: "testing"
+  TAG: "latest"
+  CONTAINER_APP_NAME: "testing"
+  RESOURCE_GROUP: "demo"
 
 jobs:
-  build-and-push:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Login to Azure
+      - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}  # Service Principal with "AcrPush" and "Contributor" roles
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Login to ACR
+      - name: Build and push
         run: |
-          az acr login --name ${{ secrets.ACR_NAME }} --expose-token  # Uses Azure auth (no extra secrets needed)
-
-      - name: Build and push Docker image
-        run: |
+          # Authenticate with ACR
+          az acr login --name ${{ secrets.ACR_NAME }}
+          
+          # Build and push
           docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.ACR_REPO_NAME }}:${{ env.TAG }} .
           docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.ACR_REPO_NAME }}:${{ env.TAG }}
 
-      - name: Update Container App image
+      - name: Update Container App
         run: |
           az containerapp update \
             --name ${{ env.CONTAINER_APP_NAME }} \
