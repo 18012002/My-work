@@ -32,26 +32,3 @@ jobs:
         run: |
           docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.ACR_REPO_NAME }}:${{ env.TAG }} .
           docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.ACR_REPO_NAME }}:${{ env.TAG }}
-
-      - name: Deploy to Container App
-        run: |
-          IMAGE_URI="${{ secrets.ACR_NAME }}.azurecr.io/${{ env.ACR_REPO_NAME }}:${{ env.TAG }}"
-          
-          # Check if container app exists
-          if az containerapp show --name ${{ env.CONTAINER_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} &>/dev/null; then
-            echo "Updating existing Container App"
-            az containerapp update \
-              --name ${{ env.CONTAINER_APP_NAME }} \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
-              --image $IMAGE_URI
-          else
-            echo "Creating new Container App"
-            az containerapp create \
-              --name ${{ env.CONTAINER_APP_NAME }} \
-              --resource-group ${{ env.RESOURCE_GROUP }} \
-              --image $IMAGE_URI \
-              --environment ${{ env.CONTAINERAPPS_ENVIRONMENT }} \
-              --registry-server ${{ secrets.ACR_NAME }}.azurecr.io \
-              --registry-username ${{ secrets.ACR_USERNAME }} \
-              --registry-password ${{ secrets.ACR_PASSWORD }}
-          fi
