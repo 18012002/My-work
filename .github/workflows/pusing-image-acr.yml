@@ -1,42 +1,41 @@
-name: image-pushing-to-acr
+name: acr-push
 
 on:
   push:
     branches:
-      - master  # Change this if needed
+      - master
+
 env:
-  ACR_REPO_NAME: "testing"  # Your container registry repo name
-  TAG: "latest"                    # Or dynamically generate a tag
-  CONTAINER_APP_NAME: "testing"  # Name of your Azure Container App
-  RESOURCE_GROUP: "demo"
+  ACR_REPO_NAME: "testing"  
+  TAG: "latest"            
+  CONTAINER_APP_NAME: "testing"  
+  RESOURCE_GROUP: "demo"    
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Log in to Azure
+      - name: Login to Azure
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}  # Service Principal with "AcrPush" and "Contributor" roles
 
-      - name: Log in to ACR
-        run: az acr login --name ${{ secrets.ACR_NAME }}
-
-      - name: Build and Push Docker Image
+      - name: Login to ACR
         run: |
-          docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/testing:latest .
-          docker push ${{ secrets.ACR_NAME }}.azurecr.io/testing:latest
-      - name: Update Azure Container App to Use Latest ACR Image
-        run: |
-          IMAGE_URI="${{ secrets.ACR_NAME }}.azurecr.io/${{ env.ACR_REPO_NAME }}:${{ env.TAG }}"
+          az acr login --name ${{ secrets.ACR_NAME }} --expose-token  # Uses Azure auth (no extra secrets needed)
 
-          az acr login --name ${{ secrets.ACR_NAME }}
-          az acr repository show-tags --name ${{ secrets.ACR_NAME }} --repository ${{ env.ACR_REPO_NAME }} --output table
-    
+      - name: Build and push Docker image
+        run: |
+          docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.ACR_REPO_NAME }}:${{ env.TAG }} .
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.ACR_REPO_NAME }}:${{ env.TAG }}
+
+      - name: Update Container App image
+        run: |
           az containerapp update \
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image $IMAGE_URI
+            --image ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.ACR_REPO_NAME }}:${{ env.TAG }}
