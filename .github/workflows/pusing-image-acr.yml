@@ -2,37 +2,56 @@ name: acr-push
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
 
 env:
-  ACR_REPO_NAME: "testing"
+  ACR_REPO_NAME: "testing"  # Your Docker image name
   TAG: "latest"
-  CONTAINER_APP_NAME: "testing"
-  RESOURCE_GROUP: "demo"
+  CONTAINER_APP_NAME: "testing1"  # From az containerapp list
+  RESOURCE_GROUP: "demo"  # From az containerapp list
+  CONTAINERAPPS_ENVIRONMENT: "managedEnvironment-demo-8ee1"  # Needed for create if missing
 
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Azure Login
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Build and push
+      - name: Log in to ACR
+        run: az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Build and Push Docker Image
         run: |
-          # Authenticate with ACR
-          az acr login --name ${{ secrets.ACR_NAME }}
-          
-          # Build and push
           docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.ACR_REPO_NAME }}:${{ env.TAG }} .
           docker push ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.ACR_REPO_NAME }}:${{ env.TAG }}
 
-      - name: Update Container App
+      - name: Deploy to Container App
         run: |
-          az containerapp update \
-            --name ${{ env.CONTAINER_APP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${{ secrets.ACR_NAME }}.azurecr.io/${{ env.ACR_REPO_NAME }}:${{ env.TAG }}
+          IMAGE_URI="${{ secrets.ACR_NAME }}.azurecr.io/${{ env.ACR_REPO_NAME }}:${{ env.TAG }}"
+          
+          # Check if container app exists
+          if az containerapp show --name ${{ env.CONTAINER_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} &>/dev/null; then
+            echo "Updating existing Container App"
+            az containerapp update \
+              --name ${{ env.CONTAINER_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --image $IMAGE_URI
+          else
+            echo "Creating new Container App"
+            az containerapp create \
+              --name ${{ env.CONTAINER_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --image $IMAGE_URI \
+              --environment ${{ env.CONTAINERAPPS_ENVIRONMENT }} \
+              --registry-server ${{ secrets.ACR_NAME }}.azurecr.io \
+              --registry-username ${{ secrets.ACR_USERNAME }} \
+              --registry-password ${{ secrets.ACR_PASSWORD }}
+          fi
