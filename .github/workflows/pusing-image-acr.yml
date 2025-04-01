@@ -28,6 +28,12 @@ jobs:
             "clientSecret": "pbj8Q~Xz0fUXaMJV2cKpVB~b6vn3Ch0lBL84Lc6e",
             "subscriptionId": "8c8095cc-566b-40b7-8615-4716c93863e2",
             "tenantId": "1bd3f08b-8a17-44a5-9c98-1ea235caf2e8",
+            "activeDirectoryEndpointUrl": "https://login.microsoftonline.com",
+            "resourceManagerEndpointUrl": "https://management.azure.com/",
+            "activeDirectoryGraphResourceId": "https://graph.windows.net/",
+            "sqlManagementEndpointUrl": "https://management.core.windows.net:8443/",
+            "galleryEndpointUrl": "https://gallery.azure.com/",
+            "managementEndpointUrl": "https://management.core.windows.net/"
           }'
 
       - name: Log in to ACR
