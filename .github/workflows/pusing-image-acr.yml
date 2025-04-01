@@ -23,7 +23,12 @@ jobs:
       - name: Log in to Azure
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          creds: '{
+            "clientId": "f23fb1fe-ae62-4bde-b649-cc6ba4ac5999",
+            "clientSecret": "pbj8Q~Xz0fUXaMJV2cKpVB~b6vn3Ch0lBL84Lc6e",
+            "subscriptionId": "8c8095cc-566b-40b7-8615-4716c93863e2",
+            "tenantId": "1bd3f08b-8a17-44a5-9c98-1ea235caf2e8",
+          }'
 
       - name: Log in to ACR
         run: az acr login --name ${{ secrets.ACR_NAME }}
